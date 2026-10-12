@@ -109,13 +109,13 @@ function TestSession({ code, token }: { code: string; token: string }) {
           <div className="test-form">
             <div className="inline">
               <NumberInput min={1} max={500} value={addCount} onChange={setAddCount} />
-              <button disabled={busy} onClick={() => act(() => test.addPeople(addCount))}>Add people</button>
+              <button type="button" disabled={busy} onClick={() => act(() => test.addPeople(addCount))}>Add people</button>
             </div>
             <div className="inline">
               <NumberInput min={1} max={5000} value={ruleCount} onChange={setRuleCount} />
-              <button disabled={busy} onClick={() => act(() => test.addRules(ruleCount))}>Add random rules</button>
+              <button type="button" disabled={busy} onClick={() => act(() => test.addRules(ruleCount))}>Add random rules</button>
             </div>
-            <button className="secondary" disabled={busy || data.rules === 0} onClick={() => act(test.clearRules)}>
+            <button type="button" className="secondary" disabled={busy || data.rules === 0} onClick={() => act(test.clearRules)}>
               Clear rules
             </button>
           </div>
@@ -124,14 +124,14 @@ function TestSession({ code, token }: { code: string; token: string }) {
         <div className="test-form">
           <div className="inline">
             <NumberInput min={1} max={10000} value={runs} onChange={setRuns} />
-            <button className="secondary" disabled={busy} onClick={() => act(async () => setSim(await test.simulate(runs)))}>
+            <button type="button" className="secondary" disabled={busy} onClick={() => act(async () => setSim(await test.simulate(runs)))}>
               Simulate draws
             </button>
           </div>
           {open ? (
-            <button disabled={busy || data.people.length < 3} onClick={() => act(admin.draw)}>Draw for real</button>
+            <button type="button" disabled={busy || data.people.length < 3} onClick={() => act(admin.draw)}>Draw for real</button>
           ) : (
-            <button className="secondary" disabled={busy} onClick={() => act(admin.reset)}>Reset draw</button>
+            <button type="button" className="secondary" disabled={busy} onClick={() => act(admin.reset)}>Reset draw</button>
           )}
         </div>
 
@@ -162,7 +162,7 @@ function TestSession({ code, token }: { code: string; token: string }) {
                     <Avatar person={p} size={28} />
                     {p.name} → {to ? to.name : "—"}
                   </span>
-                  <button className="link" onClick={() => viewAs(p.token)}>view as</button>
+                  <button type="button" className="link" onClick={() => viewAs(p.token)}>view as</button>
                 </li>
               );
             })}

@@ -53,7 +53,7 @@ function AdminConsole({ code, token }: { code: string; token: string }) {
         <InviteButton session={session} />
         <div className="row wrap admin-links">
           <CopyButton text={absoluteUrl(`${paths.admin(session.id)}#${token}`)} label="Copy admin link (private)" />
-          <button className="secondary" onClick={() => navigate(paths.join(session.id))}>Join as a participant</button>
+          <button type="button" className="secondary" onClick={() => navigate(paths.join(session.id))}>Join as a participant</button>
         </div>
       </Card>
 
@@ -64,7 +64,7 @@ function AdminConsole({ code, token }: { code: string; token: string }) {
             <li key={p.id}>
               <span className="person"><Avatar person={p} size={32} className="ring-1" />{p.name}</span>
               {!locked && (
-                <button className="link danger" onClick={() => confirm(`Remove ${p.name}?`) && act(() => api.removeParticipant(p.id))}>
+                <button type="button" className="link danger" onClick={() => confirm(`Remove ${p.name}?`) && act(() => api.removeParticipant(p.id))}>
                   remove
                 </button>
               )}
@@ -84,7 +84,7 @@ function AdminConsole({ code, token }: { code: string; token: string }) {
             {session.exclusions.map((x) => (
               <li key={x.id}>
                 {nameOf(x.giverId)} can't get {nameOf(x.receiverId)}
-                {!locked && <button className="link danger" onClick={() => act(() => api.removeExclusion(x.id))}>remove</button>}
+                {!locked && <button type="button" className="link danger" onClick={() => act(() => api.removeExclusion(x.id))}>remove</button>}
               </li>
             ))}
           </ul>
@@ -95,14 +95,14 @@ function AdminConsole({ code, token }: { code: string; token: string }) {
         {locked ? (
           <>
             <p>Names are drawn. Each person sees their match at the join link.</p>
-            <button className="secondary" onClick={() => confirm("Clear all matches and reopen the session?") && act(api.reset)}>
+            <button type="button" className="secondary" onClick={() => confirm("Clear all matches and reopen the session?") && act(api.reset)}>
               Reset draw
             </button>
           </>
         ) : (
           <>
             <p className="hint">Joining and rule changes lock after the draw. Even you won't see who got who.</p>
-            <button className="big" onClick={() => act(api.draw)} disabled={session.participants.length < 3}>
+            <button type="button" className="big" onClick={() => act(api.draw)} disabled={session.participants.length < 3}>
               Draw names
             </button>
           </>

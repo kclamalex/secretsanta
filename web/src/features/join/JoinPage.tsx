@@ -97,7 +97,7 @@ export function JoinPage({ code }: { code: string }) {
                 <p className="me-name">{me.name}</p>
                 <p className="hint">
                   {me.avatarUrl ? "Tap your photo to change it." : "Tap the circle to add your photo."}
-                  {me.avatarUrl && <button className="link danger" onClick={removePhoto}>remove</button>}
+                  {me.avatarUrl && <button type="button" className="link danger" onClick={removePhoto}>remove</button>}
                 </p>
               </div>
             </div>
@@ -118,7 +118,7 @@ export function JoinPage({ code }: { code: string }) {
           <p className="kicker">You're Secret Santa for</p>
           <Avatar person={giftee} size={88} className="ring" />
           <p className="match-name">{giftee.name}</p>
-          <button className="secondary" onClick={() => setRevealing(true)}>Replay the reveal</button>
+          <button type="button" className="secondary" onClick={() => setRevealing(true)}>Replay the reveal</button>
         </Card>
       )}
 

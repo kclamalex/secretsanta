@@ -14,14 +14,14 @@ export function ShareButton({ title, text, url }: { title: string; text: string;
     if (await copyText(`${text} ${url}`)) flash();
   };
 
-  return <button onClick={share}>{canShare ? "Share invite…" : copied ? "Copied!" : "Copy invite"}</button>;
+  return <button type="button" onClick={share}>{canShare ? "Share invite…" : copied ? "Copied!" : "Copy invite"}</button>;
 }
 
 /** Copies `text` and confirms with "Copied!" for a moment. */
 export function CopyButton({ text, label, className = "secondary" }: { text: string; label: string; className?: string }) {
   const [copied, flash] = useFlash();
   return (
-    <button className={className} onClick={async () => (await copyText(text)) && flash()}>
+    <button type="button" className={className} onClick={async () => (await copyText(text)) && flash()}>
       {copied ? "Copied!" : label}
     </button>
   );

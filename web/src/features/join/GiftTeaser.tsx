@@ -6,7 +6,7 @@ import { EnvelopeBody, Wax } from "../reveal/Envelope.tsx";
 export function GiftTeaser({ opening, onOpen }: { opening: boolean; onOpen: () => void }) {
   const envelope = useRef<HTMLSpanElement>(null);
   return (
-    <button
+    <button type="button"
       className={`gift-card ${opening ? "is-open" : ""}`}
       onClick={() => morphInto(envelope.current, ".reveal-overlay .env", onOpen, "letter")}
     >

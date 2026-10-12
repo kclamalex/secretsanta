@@ -100,6 +100,7 @@ export function Reveal({
   }, []);
 
   // One loop for everything: snow, particles, the hold and the pointer tilt.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one animation loop for the component's lifetime; re-running it would restart the scene.
   useEffect(() => {
     const el = root.current;
     if (!el || !back.current || !front.current) return;
@@ -288,7 +289,7 @@ export function Reveal({
             <div className="env">
               <EnvelopeBody />
               <div className="env-glow" />
-              <button
+              <button type="button"
                 ref={seal}
                 className="seal"
                 aria-label="Open your match"
@@ -352,16 +353,16 @@ export function Reveal({
         {reached("revealed") && (
           <div className="rv-after">
             <p className="rv-whisper">Keep it secret.</p>
-            <button className="rv-done" onClick={onClose} autoFocus>Done</button>
+            <button type="button" className="rv-done" onClick={onClose} autoFocus>Done</button>
           </div>
         )}
       </div>
 
       <canvas ref={front} className="rv-canvas" aria-hidden />
-      <button className="corner mute" onClick={toggleMute} aria-label={muted ? "Turn sound on" : "Turn sound off"}>
+      <button type="button" className="corner mute" onClick={toggleMute} aria-label={muted ? "Turn sound on" : "Turn sound off"}>
         {muted ? <SoundOffIcon /> : <SoundOnIcon />}
       </button>
-      <button className="corner close" onClick={onClose} aria-label="Close"><CloseIcon /></button>
+      <button type="button" className="corner close" onClick={onClose} aria-label="Close"><CloseIcon /></button>
     </div>
   );
 }
