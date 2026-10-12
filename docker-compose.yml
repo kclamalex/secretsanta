@@ -1,0 +1,11 @@
+services:
+  secretsanta:
+    build: .
+    ports:
+      - "0.0.0.0:3000:3000"
+    volumes:
+      - secretsanta-data:/data
+    restart: unless-stopped
+
+volumes:
+  secretsanta-data:
