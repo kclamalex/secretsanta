@@ -9,7 +9,9 @@ const subscribe = (fn: () => void) => {
   listeners.add(fn);
   return () => listeners.delete(fn);
 };
-const notify = () => listeners.forEach((fn) => fn());
+const notify = () => {
+  for (const fn of listeners) fn();
+};
 
 /** Call from an overlay that has its own snow: the page snow unmounts while it's open. */
 export function useHideAmbientSnow() {
