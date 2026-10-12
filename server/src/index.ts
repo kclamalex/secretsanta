@@ -12,7 +12,7 @@ const publicDir = resolve(process.env.PUBLIC_DIR ?? "dist/public");
 const testMode = ["1", "true"].includes(process.env.TEST_MODE ?? "");
 
 const app = createApp(openDb(dbPath), { testMode });
-if (testMode) console.log("⚠️  TEST MODE is on: /test can bulk-add fake people and show every match");
+if (testMode) console.log("TEST MODE is on: /test can bulk-add fake people and show every match");
 
 // Serve the built React app and fall back to index.html for client routes.
 if (existsSync(publicDir)) {

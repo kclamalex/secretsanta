@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { AmbientSnow } from "./AmbientSnow.tsx";
 import { adminTokens, api, participantTokens, revealedMatches, type AdminSession, type Me, type PublicSession } from "./api.ts";
 import { Avatar } from "./Avatar.tsx";
 import { squarePhoto } from "./photo.ts";
-import { Reveal } from "./Reveal.tsx";
+import { EnvelopeBody, Reveal } from "./Reveal.tsx";
+import { CameraIcon, SnowflakeIcon } from "./icons.tsx";
 import { copyText, ShareButtons } from "./Share.tsx";
 import { TestPage } from "./TestPage.tsx";
 
@@ -30,30 +33,36 @@ export function App() {
   const testPage = path.match(/^\/test(?:\/([A-Za-z0-9]+))?\/?$/); // hidden; only works with TEST_MODE=1
 
   return (
-    <main>
-      <header>
-        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="brand">
-          🎁 Secret Santa
-        </a>
-      </header>
-      {join ? (
-        <JoinPage code={join[1].toUpperCase()} />
-      ) : admin ? (
-        <AdminPage code={admin[1].toUpperCase()} />
-      ) : testPage ? (
-        <TestPage code={testPage[1]?.toUpperCase() ?? null} navigate={navigate} />
-      ) : (
-        <HomePage />
-      )}
-    </main>
+    <>
+      <AmbientSnow />
+      <main>
+        <header className="site-header">
+          <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="brand">
+            <span className="brand-seal" aria-hidden />
+            Secret Santa
+          </a>
+        </header>
+        {join ? (
+          <JoinPage code={join[1].toUpperCase()} />
+        ) : admin ? (
+          <AdminPage code={admin[1].toUpperCase()} />
+        ) : testPage ? (
+          <TestPage code={testPage[1]?.toUpperCase() ?? null} navigate={navigate} />
+        ) : (
+          <HomePage />
+        )}
+      </main>
+    </>
   );
 }
 
 // ---- Shared bits ----
 
-function Card({ title, children }: { title?: string; children: ReactNode }) {
+/** A sheet of stationery. `rise` staggers it in on first mount (the nth card waits n × 60ms). */
+function Card({ title, rise, className = "", children }: { title?: string; rise?: number; className?: string; children: ReactNode }) {
+  const style = rise === undefined ? undefined : ({ "--i": rise } as CSSProperties);
   return (
-    <section className="card">
+    <section className={`card ${rise === undefined ? "" : "rise"} ${className}`} style={style}>
       {title && <h2>{title}</h2>}
       {children}
     </section>
@@ -106,12 +115,16 @@ function HomePage() {
 
   return (
     <>
-      <Card title="Join a session">
+      <div className="hero rise" style={{ "--i": 0 } as CSSProperties}>
+        <h1 className="hero-title">Secret Santa</h1>
+        <p className="hero-tagline">Draw names. Keep the secret.</p>
+      </div>
+      <Card title="Join a session" rise={1}>
         <form onSubmit={join} className="row">
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Session code, e.g. K7PQ2M"
+            placeholder="K7PQ2M"
             aria-label="Session code"
             className="code-input"
             maxLength={6}
@@ -119,7 +132,7 @@ function HomePage() {
           <button type="submit" disabled={!code.trim()}>Join</button>
         </form>
       </Card>
-      <Card title="Start a new session">
+      <Card title="Start a new session" rise={2}>
         <form onSubmit={create} className="row">
           <input
             value={sessionName}
@@ -152,7 +165,7 @@ function PhotoPicker({ person, busy, onPick }: { person: { name: string; avatarU
         aria-label={person.avatarUrl ? "Change your photo" : "Add your photo"}
       >
         <Avatar person={person} size={88} />
-        <span className="photo-badge" aria-hidden>{busy ? "…" : "📷"}</span>
+        <span className="photo-badge" aria-hidden>{busy ? "…" : <CameraIcon size={15} />}</span>
       </button>
       <input
         ref={input}
@@ -181,6 +194,7 @@ function JoinPage({ code }: { code: string }) {
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [revealedId, setRevealedId] = useState(() => revealedMatches.get(code));
+  const teaser = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!pendingPhoto) return setPendingUrl(null);
@@ -266,67 +280,99 @@ function JoinPage({ code }: { code: string }) {
     setRevealedId(String(giftee.id));
   };
 
+  // Where supported, the small envelope grows into the reveal's envelope.
+  const openLetter = () => {
+    const small = teaser.current;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!small || reduced || typeof document.startViewTransition !== "function") return setRevealing(true);
+    const big = () => document.querySelector<HTMLElement>(".reveal-overlay .env");
+    small.style.viewTransitionName = "letter";
+    const transition = document.startViewTransition(() => {
+      flushSync(() => setRevealing(true));
+      small.style.viewTransitionName = "";
+      const el = big();
+      if (el) el.style.viewTransitionName = "letter";
+    });
+    transition.finished.finally(() => {
+      const el = big();
+      if (el) el.style.viewTransitionName = "";
+    });
+  };
+
   return (
     <>
-      <Card>
+      <div className="page-head">
         <h1 className="session-title">{session.name}</h1>
-        <p className="hint">Session code <strong className="code">{session.id}</strong></p>
+        <p className="code-label">Code <strong className="code">{session.id}</strong></p>
+      </div>
 
-        {!token && session.status === "open" && (
-          <form onSubmit={join} className="join-form">
-            <PhotoPicker person={{ name: name || "?", avatarUrl: pendingUrl }} busy={busy} onPick={pickPhoto} />
-            <div className="join-fields">
-              <p className="hint">Add a photo so your Secret Santa sees your face at the big reveal.</p>
-              <div className="row">
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-label="Your name" maxLength={60} />
-                <button type="submit" disabled={busy || !name.trim()}>Join</button>
+      {(!token || me || error) && (
+        <Card>
+
+          {!token && session.status === "open" && (
+            <form onSubmit={join} className="join-form">
+              <PhotoPicker person={{ name: name || "?", avatarUrl: pendingUrl }} busy={busy} onPick={pickPhoto} />
+              <div className="join-fields">
+                <p className="hint">Add a photo so your Secret Santa sees your face at the big reveal.</p>
+                <div className="row">
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-label="Your name" maxLength={60} />
+                  <button type="submit" disabled={busy || !name.trim()}>Join</button>
+                </div>
+              </div>
+            </form>
+          )}
+          {!token && session.status === "drawn" && <p>Names have already been drawn. Ask the admin to reset if you need to join.</p>}
+
+          {me && (
+            <div className="me">
+              <PhotoPicker person={me} busy={busy} onPick={pickPhoto} />
+              <div>
+                <p className="me-name">{me.name}</p>
+                <p className="hint">
+                  {me.avatarUrl ? "Tap your photo to change it." : "Tap the circle to add your photo."}
+                  {me.avatarUrl && <button className="link danger" onClick={removePhoto}>remove</button>}
+                </p>
               </div>
             </div>
-          </form>
-        )}
-        {!token && session.status === "drawn" && <p>Names have already been drawn. Ask the admin to reset if you need to join.</p>}
-
-        {me && (
-          <div className="me">
-            <PhotoPicker person={me} busy={busy} onPick={pickPhoto} />
-            <div>
-              <p className="me-name">{me.name}</p>
-              <p className="hint">
-                {me.avatarUrl ? "Tap your photo to change it." : "Tap the circle to add your photo."}
-                {me.avatarUrl && <button className="link danger" onClick={removePhoto}>remove</button>}
-              </p>
-            </div>
-          </div>
-        )}
-        {me && !giftee && <p className="waiting">⏳ Your match appears here once the admin draws names.</p>}
-        <ErrorText error={error} />
-      </Card>
+          )}
+          {me && !giftee && (
+            <p className="waiting">
+              <SnowflakeIcon size={16} className="waiting-icon" />
+              Your match appears here once the admin draws names.
+            </p>
+          )}
+          <ErrorText error={error} />
+        </Card>
+      )}
 
       {giftee && unopened && (
-        <button className="gift-card" onClick={() => setRevealing(true)}>
-          <span className="gift-card-box" aria-hidden>🎁</span>
-          <span>
-            <strong>Names are drawn!</strong>
-            <span className="hint">Tap to unwrap your match. Make sure nobody is looking 👀</span>
+        <button className={`gift-card ${revealing ? "is-open" : ""}`} onClick={openLetter}>
+          <span ref={teaser} className="mini-env">
+            <span className="env">
+              <EnvelopeBody />
+              <span className="seal">
+                <span className="wax whole"><SnowflakeIcon /></span>
+              </span>
+            </span>
+          </span>
+          <span className="gift-card-text">
+            <strong>A letter for you</strong>
+            <span className="hint">Names are drawn. Open it somewhere private.</span>
           </span>
         </button>
       )}
       {giftee && !unopened && (
-        <Card>
-          <div className="match">
-            <Avatar person={giftee} size={96} />
-            <div>
-              <p className="hint">You're Secret Santa for</p>
-              <p className="match-name">{giftee.name}</p>
-              <button className="secondary" onClick={() => setRevealing(true)}>Replay the reveal</button>
-            </div>
-          </div>
+        <Card className="match">
+          <p className="kicker">You're Secret Santa for</p>
+          <Avatar person={giftee} size={88} className="ring" />
+          <p className="match-name">{giftee.name}</p>
+          <button className="secondary" onClick={() => setRevealing(true)}>Replay the reveal</button>
         </Card>
       )}
 
       {session.status === "open" && (
         <Card title="Invite people">
-          <ShareButtons title={session.name} text={`Join our Secret Santa "${session.name}" 🎁`} url={joinLink} />
+          <ShareButtons title={session.name} text={`Join our Secret Santa "${session.name}"`} url={joinLink} />
         </Card>
       )}
 
@@ -334,8 +380,8 @@ function JoinPage({ code }: { code: string }) {
         <ul className="faces">
           {session.participants.map((p) => (
             <li key={p.id}>
-              <Avatar person={p} size={56} />
-              <span>{p.name}{me?.participantId === p.id && " (you)"}</span>
+              <Avatar person={p} size={56} className="ring" />
+              <span className="face-name">{p.name}{me?.participantId === p.id && " (you)"}</span>
             </li>
           ))}
         </ul>
@@ -420,10 +466,16 @@ function AdminPage({ code }: { code: string }) {
 
   return (
     <>
-      <Card title={`${session.name} · admin`}>
+      <div className="page-head">
+        <p className="kicker">Admin</p>
+        <h1 className="session-title">{session.name}</h1>
+      </div>
+
+      <Card title="Invite people">
+        <p className="code-caption">Session code</p>
         <p className="code-big">{session.id}</p>
         <p className="hint">Send the link to everyone. They join from their own phone and add a photo.</p>
-        <ShareButtons title={session.name} text={`Join our Secret Santa "${session.name}" 🎁`} url={joinLink} />
+        <ShareButtons title={session.name} text={`Join our Secret Santa "${session.name}"`} url={joinLink} />
         <div className="row wrap admin-links">
           <button className="secondary" onClick={copyAdminLink}>{copied ? "Copied!" : "Copy admin link (private)"}</button>
           <button className="secondary" onClick={() => navigate(`/s/${session.id}`)}>Join as a participant</button>
@@ -435,7 +487,7 @@ function AdminPage({ code }: { code: string }) {
         <ul className="people">
           {session.participants.map((p) => (
             <li key={p.id}>
-              <span className="person"><Avatar person={p} size={32} />{p.name}</span>
+              <span className="person"><Avatar person={p} size={32} className="ring-1" />{p.name}</span>
               {!locked && (
                 <button className="link danger" onClick={() => confirm(`Remove ${p.name}?`) && act(() => api.removeParticipant(code, token, p.id))}>
                   remove
@@ -453,7 +505,7 @@ function AdminPage({ code }: { code: string }) {
               <option value="">Giver…</option>
               {session.participants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <span>can't get</span>
+            <span className="rule-word">can't get</span>
             <select value={receiver} onChange={(e) => setReceiver(e.target.value)} aria-label="Receiver">
               <option value="">Receiver…</option>
               {session.participants.filter((p) => String(p.id) !== giver).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -470,7 +522,7 @@ function AdminPage({ code }: { code: string }) {
           <ul className="people">
             {session.exclusions.map((x) => (
               <li key={x.id}>
-                {nameOf(x.giverId)} ✗ {nameOf(x.receiverId)}
+                {nameOf(x.giverId)} can't get {nameOf(x.receiverId)}
                 {!locked && <button className="link danger" onClick={() => act(() => api.removeExclusion(code, token, x.id))}>remove</button>}
               </li>
             ))}
@@ -481,7 +533,7 @@ function AdminPage({ code }: { code: string }) {
       <Card title="Draw">
         {locked ? (
           <>
-            <p>✅ Names are drawn. Each person sees their match at the join link.</p>
+            <p>Names are drawn. Each person sees their match at the join link.</p>
             <button className="secondary" onClick={() => confirm("Clear all matches and reopen the session?") && act(() => api.reset(code, token))}>
               Reset draw
             </button>
@@ -489,7 +541,7 @@ function AdminPage({ code }: { code: string }) {
         ) : (
           <>
             <p className="hint">Joining and rule changes lock after the draw. Even you won't see who got who.</p>
-            <button onClick={() => act(() => api.draw(code, token))} disabled={session.participants.length < 3}>
+            <button className="big" onClick={() => act(() => api.draw(code, token))} disabled={session.participants.length < 3}>
               Draw names
             </button>
           </>

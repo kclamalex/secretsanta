@@ -48,7 +48,7 @@ function NewTestSession({ navigate }: { navigate: (to: string) => void }) {
 
   return (
     <section className="card">
-      <h2>🧪 New test session</h2>
+      <h2>New test session</h2>
       <form onSubmit={create} className="test-form">
         <label>Fake people <input type="number" min={3} max={500} value={people} onChange={(e) => setPeople(Number(e.target.value))} /></label>
         <label>Random rules <input type="number" min={0} max={5000} value={rules} onChange={(e) => setRules(Number(e.target.value))} /></label>
@@ -109,7 +109,7 @@ function TestSession({ code, navigate }: { code: string; navigate: (to: string) 
   return (
     <>
       <section className="card">
-        <h2>🧪 Test session {code}</h2>
+        <h2>Test session {code}</h2>
         <p className="hint">
           {data.people.length} people · {data.rules} rules · {open ? "open" : "drawn"} ·{" "}
           <a href={`/admin/${code}`}>admin page</a> · <a href={`/s/${code}`}>join page</a>
@@ -147,7 +147,7 @@ function TestSession({ code, navigate }: { code: string; navigate: (to: string) 
 
         {sim && (
           <p className={sim.invalid ? "error" : ""}>
-            {sim.invalid ? "❌" : "✅"} {sim.valid}/{sim.runs} valid · {sim.impossible} impossible · {sim.invalid} invalid ·{" "}
+            {sim.invalid ? "Failed:" : "Passed:"} {sim.valid}/{sim.runs} valid · {sim.impossible} impossible · {sim.invalid} invalid ·{" "}
             {Math.round(sim.pairCoverage * 100)}% of allowed pairs seen · {sim.ms} ms
             {sim.problems.map((p) => <span key={p} className="error"><br />{p}</span>)}
           </p>
@@ -159,7 +159,7 @@ function TestSession({ code, navigate }: { code: string; navigate: (to: string) 
         <section className="card">
           <h2>Saved draw</h2>
           {data.problems.length === 0 ? (
-            <p>✅ All checks pass: everyone gives once, receives once, nobody gets themselves, no rule is broken.</p>
+            <p>All checks pass: everyone gives once, receives once, nobody gets themselves, no rule is broken.</p>
           ) : (
             <ul className="error">{data.problems.map((p) => <li key={p}>{p}</li>)}</ul>
           )}
