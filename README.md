@@ -46,14 +46,29 @@ make test        # unit + API tests
 npm run typecheck
 ```
 
+Code is split by layer. `lib/`, `hooks/` and `components/` know nothing about Secret Santa; the rules live in `domain/` (server) and `features/` (web).
+
+**Server** (`server/src/`)
+
 | Path | What |
 |---|---|
-| `server/src/draw.ts` | Matching algorithm |
-| `server/src/app.ts` | API routes |
-| `server/src/db.ts` | SQLite schema |
-| `web/src/App.tsx` | All pages: home, join, admin |
-| `web/src/Reveal.tsx` | Full-screen match reveal |
-| `web/src/Share.tsx` | Share-sheet invite button |
-| `web/src/photo.ts` | Crops and shrinks photos before upload |
+| `index.ts` | Entry point: env, static files, listen |
+| `lib/` | Generic helpers: `randomMatching` (draw a valid partner for every element), shuffle, validation, tokens, image sniffing, HTTP errors |
+| `db/` | SQLite schema and one repository per table. The only place SQL lives |
+| `domain/` | Secret Santa rules: `draw.ts` (built on `randomMatching`), `simulate.ts`, `secretSanta.ts` (join, rules, draw, reset) |
+| `api/` | Express: `app.ts` wires `routes/` (public, participant, admin, test mode), `context.ts` does auth, `present.ts` shapes JSON |
+
+**Web** (`web/src/`)
+
+| Path | What |
+|---|---|
+| `App.tsx` | Layout and route table |
+| `api/` | Typed fetch client: `client.ts` (transport), `secretSanta.ts` (endpoints), `types.ts` |
+| `lib/` | Generic helpers: router, localStorage, clipboard, photo crop, view transitions |
+| `hooks/` | Generic hooks: `usePolledData`, `useAsyncAction`, `useFlash`, `useObjectUrl`… |
+| `components/` | Generic UI: `Card`, `Avatar`, `ShareButton`, `PhotoPicker`, `Link`, icons |
+| `effects/` | Snow, particles and synthesized sound |
+| `store/` | What a browser remembers per session (tokens, revealed match) |
+| `features/` | One folder per page (`home`, `join`, `admin`, `reveal`, `test`) plus `shared/` (paths, invite button) |
 
 Environment: `HOST` (`0.0.0.0`), `PORT` (3000), `DB_PATH` (`data/secretsanta.db`, `/data/secretsanta.db` in Docker).

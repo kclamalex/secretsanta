@@ -1,8 +1,8 @@
 import express from "express";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { createApp } from "./app.ts";
-import { openDb } from "./db.ts";
+import { createApp } from "./api/app.ts";
+import { openDb } from "./db/index.ts";
 
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? "0.0.0.0";

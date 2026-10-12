@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import type { Participant } from "./api.ts";
-import { useHideAmbientSnow } from "./AmbientSnow.tsx";
-import { Avatar } from "./Avatar.tsx";
-import { CloseIcon, SnowflakeIcon, SoundOffIcon, SoundOnIcon } from "./icons.tsx";
-import { createScene, type Scene } from "./particles.ts";
-import * as sound from "./sound.ts";
+import type { Participant } from "../../api/types.ts";
+import { Avatar } from "../../components/Avatar.tsx";
+import { CloseIcon, SnowflakeIcon, SoundOffIcon, SoundOnIcon } from "../../components/icons.tsx";
+import { useHideAmbientSnow } from "../../effects/AmbientSnow.tsx";
+import { createScene, type Scene } from "../../effects/particles.ts";
+import * as sound from "../../effects/sound.ts";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll.ts";
+import { prefersReducedMotion, vibrate } from "../../lib/device.ts";
+import { EnvelopeBody, Wax } from "./Envelope.tsx";
 
 type Phase = "idle" | "crack" | "open" | "rise" | "lift" | "flip" | "revealed";
 const PHASES: Phase[] = ["idle", "crack", "open", "rise", "lift", "flip", "revealed"];
@@ -14,7 +17,6 @@ const TIMELINE: [Phase, number][] = [["open", 300], ["rise", 900], ["lift", 1350
 const EDGE_ON_MS = 2150; // the flip uses a symmetric ease, so the card is edge-on halfway through it
 const HOLD_MS = 1100;
 const TAP_MS = 250;
-const vibrate = (pattern: number | number[]) => navigator.vibrate?.(pattern); // Android only; iOS ignores it
 
 /** Envelope and card sizes for this viewport. The card is laid out at its final size and scaled down to fit the envelope, so its text is crisp once it lands. */
 function measure() {
@@ -39,27 +41,6 @@ function measure() {
   };
 }
 
-/** The paper of the envelope, back to front; the seal goes on top. Spans, so the small teaser on the join page can reuse it inside a button. */
-export function EnvelopeBody() {
-  return (
-    <>
-      <span className="env-back" />
-      <span className="env-pocket">
-        <i className="pocket-l" />
-        <i className="pocket-r" />
-        <i className="pocket-fold"><i /></i>
-        <i className="pocket-b" />
-      </span>
-      <span className="env-edge shadow"><i /></span>
-      <span className="env-edge leak"><i /></span>
-      <span className="env-flap">
-        <i className="flap-out" />
-        <i className="flap-in" />
-      </span>
-    </>
-  );
-}
-
 /**
  * Full-screen reveal, "the sealed letter": press and hold a wax seal until it cracks, the
  * flap opens, a card rises out of the envelope, comes to the camera and turns over to show
@@ -77,7 +58,7 @@ export function Reveal({
   onRevealed: () => void;
   onClose: () => void;
 }) {
-  const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [reduced] = useState(prefersReducedMotion);
   const [phase, setPhase] = useState<Phase>("idle");
   const [hinted, setHinted] = useState(false);
   const [muted, setMuted] = useState(sound.isMuted);
@@ -100,6 +81,7 @@ export function Reveal({
   onRevealedRef.current = onRevealed;
 
   useHideAmbientSnow(); // this overlay has its own, denser snow
+  useLockBodyScroll();
 
   const go = (p: Phase) => {
     phaseRef.current = p;
@@ -107,13 +89,8 @@ export function Reveal({
   };
 
   useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     for (const p of [giftee, ...pool]) if (p.avatarUrl) new Image().src = p.avatarUrl;
     document.fonts?.load('600 1em "Fraunces"').catch(() => {}); // so the name doesn't reflow mid-animation
-    return () => {
-      document.body.style.overflow = previous;
-    };
   }, [pool, giftee]);
 
   useEffect(() => {
@@ -324,15 +301,9 @@ export function Reveal({
                   <circle className="track" cx="50" cy="50" r="48" />
                   <circle ref={ring} className="progress" cx="50" cy="50" r="48" pathLength={1} />
                 </svg>
-                <span ref={wax} className="wax whole" aria-hidden>
-                  <SnowflakeIcon />
-                </span>
-                <span className="seal-half l" aria-hidden>
-                  <span className="wax"><SnowflakeIcon /></span>
-                </span>
-                <span className="seal-half r" aria-hidden>
-                  <span className="wax"><SnowflakeIcon /></span>
-                </span>
+                <Wax ref={wax} whole />
+                <span className="seal-half l" aria-hidden><Wax /></span>
+                <span className="seal-half r" aria-hidden><Wax /></span>
               </button>
             </div>
 

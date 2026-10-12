@@ -1,4 +1,4 @@
-type Person = { name: string; avatarUrl: string | null };
+export type Person = { name: string; avatarUrl: string | null };
 
 /** Deep green, oxblood, navy, plum, bronze: all dark enough for cream initials. */
 const JEWELS = ["#1f4a3a", "#6e1d1a", "#1f2f55", "#4a2444", "#6b4a20"];
