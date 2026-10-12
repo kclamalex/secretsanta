@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useReducedMotion } from "../hooks/useReducedMotion.ts";
 import { createAmbientSnow } from "./particles.ts";
 
 // How many full-screen overlays (the reveal) are open; they bring their own snow.
@@ -31,12 +32,6 @@ function SnowCanvas() {
 /** Sparse, dim snow behind the page. Off entirely under reduced motion. */
 export function AmbientSnow() {
   const hidden = useSyncExternalStore(subscribe, () => overlays > 0);
-  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  const reduced = useReducedMotion();
   return hidden || reduced ? null : <SnowCanvas />;
 }

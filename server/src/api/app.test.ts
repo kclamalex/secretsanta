@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { createApp } from "./app.ts";
-import { openDb } from "./db.ts";
+import { openDb } from "../db/index.ts";
 
 let server: Server;
 let base: string;

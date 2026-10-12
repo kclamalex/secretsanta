@@ -2,14 +2,11 @@
  * Tiny synthesized sound effects (no audio files). iOS only allows audio after a tap,
  * so call `unlock()` from the tap handler that starts the reveal.
  */
+import { localStore } from "../lib/storage.ts";
+
+const settings = localStore("secretsanta");
 let ctx: AudioContext | null = null;
-let muted = (() => {
-  try {
-    return localStorage.getItem("secretsanta:muted") === "1";
-  } catch {
-    return false;
-  }
-})();
+let muted = settings.get("muted") === "1";
 
 /** Everything plays through one bus (with a shared reverb) so mute and stopAll reach sounds already playing. */
 let bus: { gain: GainNode; reverb: ConvolverNode } | null = null;
@@ -19,11 +16,7 @@ export const isMuted = () => muted;
 export function setMuted(value: boolean) {
   muted = value;
   if (ctx && bus) bus.gain.gain.setTargetAtTime(value ? 0 : 1, ctx.currentTime, 0.03);
-  try {
-    localStorage.setItem("secretsanta:muted", value ? "1" : "0");
-  } catch {
-    /* private mode */
-  }
+  settings.set("muted", value ? "1" : "0");
 }
 
 export function unlock() {
